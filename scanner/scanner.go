@@ -15,65 +15,48 @@ func NewScanner(input string) *Scanner {
 	}
 }
 
-func (scn *Scanner) Scan(regExpStr string) (rtn string, ok bool) {
+func (scn *Scanner) Scan(re *regexp.Regexp) (rtn string, ok bool) {
 	if scn.IsEos() {
 		return "", false
 	}
 
 	strForScan := scn.input[scn.pos:]
-	loc := regexp.MustCompile(regExpStr).FindStringIndex(strForScan)
+	loc := re.FindStringIndex(strForScan)
 
-	if loc == nil {
-		rtn = ""
-		ok = false
-		return
-	} else if loc[0] != 0 {
-		rtn = ""
-		ok = false
-		return
-	} else {
-
-		rtn = scn.input[scn.pos+loc[0] : scn.pos+loc[1]]
-		ok = true
-
-		scn.pos = loc[1] + scn.pos
-
-		return
-	}
-}
-
-func (scn *Scanner) ScanUntil(regExpStr string) (rtn string, ok bool) {
-	if scn.IsEos() {
+	if loc == nil || loc[0] != 0 {
 		return "", false
 	}
 
-	strForScan := scn.input[scn.pos:]
-	loc := regexp.MustCompile(regExpStr).FindStringIndex(strForScan)
-
-	if loc == nil {
-		rtn = ""
-		ok = false
-		return
-	} else {
-
-		rtn = scn.input[scn.pos : scn.pos+loc[1]]
-		ok = true
-
-		scn.pos = loc[1] + scn.pos
-
-		return
-	}
-}
-
-func (scn *Scanner) SkipUntil(regExpStr string) (rtn int, ok bool) {
-	rtnStr, ok := scn.ScanUntil(regExpStr)
-	if ok {
-		rtn = len(rtnStr)
-	} else {
-		rtn = 0
-	}
-
+	rtn = scn.input[scn.pos+loc[0] : scn.pos+loc[1]]
+	ok = true
+	scn.pos = loc[1] + scn.pos
 	return
+}
+
+func (scn *Scanner) ScanUntil(re *regexp.Regexp) (rtn string, ok bool) {
+	if scn.IsEos() {
+		return "", false
+	}
+
+	strForScan := scn.input[scn.pos:]
+	loc := re.FindStringIndex(strForScan)
+
+	if loc == nil {
+		return "", false
+	}
+
+	rtn = scn.input[scn.pos : scn.pos+loc[1]]
+	ok = true
+	scn.pos = loc[1] + scn.pos
+	return
+}
+
+func (scn *Scanner) SkipUntil(re *regexp.Regexp) (rtn int, ok bool) {
+	rtnStr, ok := scn.ScanUntil(re)
+	if !ok {
+		return 0, false
+	}
+	return len(rtnStr), true
 }
 
 func (scn *Scanner) Getch() (rtn string, ok bool) {
@@ -82,8 +65,8 @@ func (scn *Scanner) Getch() (rtn string, ok bool) {
 	}
 
 	rtn = scn.input[scn.pos : scn.pos+1]
-	scn.pos = scn.pos + 1
 	ok = true
+	scn.pos = scn.pos + 1
 	return
 }
 
